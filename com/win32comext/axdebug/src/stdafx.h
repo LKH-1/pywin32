@@ -20,13 +20,11 @@ typedef VARIANT UserVARIANT;
 typedef BSTR UserBSTR;
 #endif
 
-#ifdef HAVE_SDK_ACTIVDBG
 #include <activdbg.h>
-#else
-#include "activdbg.h"
-#endif
 
 #if defined(__REQUIRED_RPCNDR_H_VERSION__)
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
 // for some strange reason, these no longer exist in dbgprop.h !?!?
 enum __MIDL___MIDL_itf_dbgprop_0000_0001
     {	DBGPROP_ATTRIB_NO_ATTRIB	= 0,
@@ -59,6 +57,7 @@ enum __MIDL___MIDL_itf_dbgprop_0000_0002
 	DBGPROP_INFO_AUTOEXPAND	= 0x8000000
     };
 typedef DWORD DBGPROP_INFO_FLAGS;
+#endif
 
 enum {
    EX_DBGPROP_INFO_ID  =0x0100,
