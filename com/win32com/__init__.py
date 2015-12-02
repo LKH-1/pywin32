@@ -2,7 +2,7 @@
 # Initialization for the win32com package
 #
 
-import win32api, sys, os
+import win32api, sys, os, tempfile
 import pythoncom
 
 # flag if we are in a "frozen" build.
@@ -20,6 +20,8 @@ if _frozen and not getattr(pythoncom, "frozen", 0):
 #  live under the main win32com directory.
 __gen_path__ = ''
 __build_path__ = None
+
+
 ### TODO - Load _all_ \\Extensions subkeys - for now, we only read the default
 ### Modules will work if loaded into "win32comext" path.
 
@@ -32,7 +34,7 @@ def SetupEnvironment():
 		key = win32api.RegOpenKey(HKEY_LOCAL_MACHINE , keyName, 0, KEY_QUERY_VALUE)
 	except (win32api.error, AttributeError):
 		key = None
-		
+
 	try:
 		found = 0
 		if key is not None:
@@ -48,7 +50,7 @@ def SetupEnvironment():
 			except win32api.error:
 				# Give up in disgust!
 				pass
-	
+
 		# For the sake of developers, we also look up a "BuildPath" key
 		# If extension modules add support, we can load their .pyd's from a completely
 		# different directory (see the comments below)
@@ -80,6 +82,11 @@ def __PackageSupportBuildPath__(package_path):
 
 if not _frozen:
 	SetupEnvironment()
+if not __gen_path__:
+    # The original code to set __gen_path__ could end up trying to create a dir
+    # inside the installation directory, for which we do not have permission,
+    # and so error out. Instead use the temp directory.
+    __gen_path__ = os.path.join(tempfile.gettempdir(), "gen_py", "%d.%d" % (sys.version_info[0], sys.version_info[1]))
 
 # If we don't have a special __gen_path__, see if we have a gen_py as a
 # normal module and use that (ie, "win32com.gen_py" may already exist as
@@ -93,13 +100,13 @@ if not __gen_path__:
 		__gen_path__ = iter(sys.modules["win32com.gen_py"].__path__).next()
 	except ImportError:
 		# If a win32com\gen_py directory already exists, then we use it
-		# (gencache doesn't insist it have an __init__, but our __import__ 
+		# (gencache doesn't insist it have an __init__, but our __import__
 		# above does!
 		__gen_path__ = os.path.abspath(os.path.join(__path__[0], "gen_py"))
 		if not os.path.isdir(__gen_path__):
 			# We used to dynamically create a directory under win32com -
-			# but this sucks.  If the dir doesn't already exist, we we 
-			# create a version specific directory under the user temp 
+			# but this sucks.  If the dir doesn't already exist, we we
+			# create a version specific directory under the user temp
 			# directory.
 			__gen_path__ = os.path.join(
 								win32api.GetTempPath(), "gen_py",
