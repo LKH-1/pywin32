@@ -800,11 +800,10 @@ class my_build_ext(build_ext):
 
     def _why_cant_build_extension(self, ext):
         # Return None, or a reason it can't be built.
-        # Exclude exchange 32-bit utility libraries from 64-bit
-        # builds. Note that the exchange module now builds, but only
-        # includes interfaces for 64-bit builds.
-        if self.plat_name == 'win-amd64' and ext.name in ['exchdapi']:
-            return "No 64-bit library for utility functions available."
+        if ext.name in {'exchdapi', 'exchange', 'mapi'}:
+            # Dont need these modules, and they require headers not present in
+            # the windows SDK
+            return ext.name + " module is disabled"
         include_dirs = self.compiler.include_dirs + \
                        os.environ.get("INCLUDE", "").split(os.pathsep)
         if self.windows_h_version is None:
