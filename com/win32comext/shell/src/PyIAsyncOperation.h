@@ -4,11 +4,13 @@
 //
 // Interface Declaration
 
+#include "PythonCOM.h"
+
 class PyIAsyncOperation : public PyIUnknown
 {
 public:
 	MAKE_PYCOM_CTOR(PyIAsyncOperation);
-	static IAsyncOperation *GetI(PyObject *self);
+	static IDataObjectAsyncCapability *GetI(PyObject *self);
 	static PyComTypeObject type;
 
 	// The Python methods
@@ -26,11 +28,11 @@ protected:
 //
 // Gateway Declaration
 
-class PyGAsyncOperation : public PyGatewayBase, public IAsyncOperation
+class PyGAsyncOperation : public PyGatewayBase, public IDataObjectAsyncCapability
 {
 protected:
 	PyGAsyncOperation(PyObject *instance) : PyGatewayBase(instance) { ; }
-	PYGATEWAY_MAKE_SUPPORT2(PyGAsyncOperation, IAsyncOperation, IID_IAsyncOperation, PyGatewayBase)
+	PYGATEWAY_MAKE_SUPPORT2(PyGAsyncOperation, IDataObjectAsyncCapability, IID_IDataObjectAsyncCapability, PyGatewayBase)
 
 
 

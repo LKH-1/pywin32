@@ -3578,7 +3578,7 @@ static const PyCom_InterfaceSupportInfo g_interfaceSupportData[] =
 	PYCOM_INTERFACE_IID_ONLY		  (ShellLinkA),
 	PYCOM_INTERFACE_CLSID_ONLY		  (ShellLink),
 	PYCOM_INTERFACE_IID_ONLY		  (ShellLinkW),
-	PYCOM_INTERFACE_FULL(AsyncOperation),
+    {&IID_IDataObjectAsyncCapability, "IDataObjectAsyncCapability", "IID_IDataObjectAsyncCapability", &PyIAsyncOperation::type, GET_PYGATEWAY_CTOR(PyGAsyncOperation)},
 	PYCOM_INTERFACE_FULL(ContextMenu),
 	PYCOM_INTERFACE_SERVER_ONLY(ContextMenu2),
 	PYCOM_INTERFACE_SERVER_ONLY(ContextMenu3),
