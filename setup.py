@@ -11,7 +11,7 @@ to build and install into your current Python installation.
 
 These extensions require a number of libraries to build, some of which may
 require you to install special SDKs or toolkits.  This script will attempt
-to build as many as it can, and at the end of the build will report any 
+to build as many as it can, and at the end of the build will report any
 extension modules that could not be built and why.
 
 This has got complicated due to the various different versions of
@@ -140,13 +140,13 @@ def find_platform_sdk_dir():
     # dead ends so we only consider the job done if we find the "windows.h"
     # landmark.
     DEBUG = False # can't use log.debug - not setup yet
-    landmark = "include\\windows.h"
+    landmark = r"include\um\windows.h"
     # 1. The use might have their current environment setup for the
-    #    SDK, in which case the "MSSdk" env var is set.
-    sdkdir = os.environ.get("MSSdk")
+    #    SDK, in which case the "WindowsSdkDir" env var is set.
+    sdkdir = os.environ.get("WINDOWSSDKDIR")
     if sdkdir:
         if DEBUG:
-            print "PSDK: try %%MSSdk%%: '%s'" % sdkdir
+            print "PSDK: try %%WindowsSdkDir%%: '%s'" % sdkdir
         if os.path.isfile(os.path.join(sdkdir, landmark)):
             return sdkdir
     # 2. The "Install Dir" value in the
@@ -246,7 +246,7 @@ if sys.version_info > (2,6):
     # always monkeypatch it in even though it will only be called in 2.7
     # and 3.2+.
     MSVCCompiler.manifest_get_embed_info = manifest_get_embed_info
-        
+
     def monkeypatched_spawn(self, cmd):
         is_link = cmd[0].endswith("link.exe") or cmd[0].endswith('"link.exe"')
         is_mt = cmd[0].endswith("mt.exe") or cmd[0].endswith('"mt.exe"')
@@ -279,7 +279,7 @@ if sys.version_info > (2,6):
                     break
 
     def monkeypatched_link(self, target_desc, objects, output_filename, *args, **kw):
-        # no manifests for 3.3+ 
+        # no manifests for 3.3+
         self._want_assembly_kept = sys.version_info < (3,3) and \
                                    (os.path.basename(output_filename).startswith("PyISAPI_loader.dll") or \
                                     os.path.basename(output_filename).startswith("perfmondata.dll") or \
@@ -299,7 +299,7 @@ class WinExt (Extension):
     # Base class for all win32 extensions, with some predefined
     # library and include dirs, and predefined windows libraries.
     # Additionally a method to parse .def files into lists of exported
-    # symbols, and to read 
+    # symbols, and to read
     def __init__ (self, name, sources,
                   include_dirs=[],
                   define_macros=None,
@@ -452,7 +452,7 @@ class WinExt (Extension):
             self.extra_link_args.append("/DEBUG")
             self.extra_link_args.append("/PDB:%s\%s.pdb" %
                                        (pch_dir, self.name))
-            # enable unwind semantics - some stuff needs it and I can't see 
+            # enable unwind semantics - some stuff needs it and I can't see
             # it hurting
             self.extra_compile_args.append("/EHsc")
 
@@ -538,8 +538,8 @@ class WinExt_win32com(WinExt):
 # * Require use of the Exchange 2000 SDK - this works for both VC6 and 7
 class WinExt_win32com_mapi(WinExt_win32com):
     def __init__ (self, name, **kw):
-        # The Exchange 2000 SDK seems to install itself without updating 
-        # LIB or INCLUDE environment variables.  It does register the core 
+        # The Exchange 2000 SDK seems to install itself without updating
+        # LIB or INCLUDE environment variables.  It does register the core
         # directory in the registry tho - look it up
         sdk_install_dir = None
         libs = kw.get("libraries", "")
@@ -565,7 +565,7 @@ class WinExt_win32com_mapi(WinExt_win32com):
             d = os.path.join(sdk_install_dir, "SDK", "Lib")
             if os.path.isdir(d):
                 kw.setdefault("library_dirs", []).insert(0, d)
-                
+
         # The stand-alone exchange SDK has these libs
         if distutils.util.get_platform() == 'win-amd64':
             # Additional utility functions are only available for 32-bit builds.
@@ -584,7 +584,7 @@ class WinExt_win32com_axdebug(WinExt_win32com):
     def __init__ (self, name, **kw):
         # Later SDK versions again ship with activdbg.h, but if we attempt
         # to use our own copy of that file with that SDK, we fail to link.
-        if os.path.isfile(os.path.join(sdk_dir, "include", "activdbg.h")):
+        if os.path.isfile(os.path.join(sdk_dir, "include", 'um', "activdbg.h")):
             kw.setdefault('extra_compile_args', []).append("/DHAVE_SDK_ACTIVDBG")
         WinExt_win32com.__init__(self, name, **kw)
 
@@ -607,7 +607,7 @@ if do_2to3:
                     urllib xrange""".split()
         fqfixers = ['lib2to3.fixes.fix_' + f for f in fixers]
 
-        options = dict(doctests_only=False, fix=[], list_fixes=[], 
+        options = dict(doctests_only=False, fix=[], list_fixes=[],
                        print_function=False, verbose=False,
                        write=True)
         r = RefactoringTool(fqfixers, options)
@@ -638,20 +638,20 @@ if do_2to3:
 
         def run(self):
             self.updated_files = []
-    
+
             # Base class code
             if self.py_modules:
                 self.build_modules()
             if self.packages:
                 self.build_packages()
                 self.build_package_data()
-    
+
             # 2to3
             refactor_filenames(self.updated_files)
-    
+
             # Remaining base class code
             self.byte_compile(self.get_outputs(include_bytecode=0))
-    
+
         def build_module(self, module, module_file, package):
             res = build_py.build_module(self, module, module_file, package)
             if res[1]:
@@ -757,10 +757,10 @@ class my_build_ext(build_ext):
         extra = os.path.join(sdk_dir, 'lib')
         if is_64bit:
             extra = os.path.join(extra, 'x64')
-            assert os.path.isdir(extra), extra
+            # assert os.path.isdir(extra), extra
         assert extra not in self.library_dirs # see above
-        assert os.path.isdir(extra), "%s doesn't exist!" % (extra,)
-        self.compiler.add_library_dir(extra)
+        # assert os.path.isdir(extra), "%s doesn't exist!" % (extra,)
+        # self.compiler.add_library_dir(extra)
         # directx sdk sucks - how to locate it automatically?
         # Must manually set DIRECTX_SDK_DIR for now.
         # (but it appears November 2008 and later versions set DXSDK_DIR, so
@@ -966,7 +966,7 @@ class my_build_ext(build_ext):
         # First, sanity-check the 'extensions' list
         self.check_extensions_list(self.extensions)
 
-        self.found_libraries = {}        
+        self.found_libraries = {}
 
         if not hasattr(self.compiler, 'initialized'):
             # 2.3 and earlier initialized at construction
@@ -1585,7 +1585,7 @@ for info in (
         ("win2kras", "rasapi32", None, 0x0500, "win32/src/win2krasmodule.cpp"),
         ("win32cred", "AdvAPI32 credui", True, 0x0501, 'win32/src/win32credmodule.cpp'),
         ("win32crypt", "Crypt32 Advapi32", True, 0x0500, """
-            win32/src/win32crypt/win32cryptmodule.cpp	
+            win32/src/win32crypt/win32cryptmodule.cpp
             win32/src/win32crypt/win32crypt_structs.cpp
             win32/src/win32crypt/PyCERTSTORE.cpp
             win32/src/win32crypt/PyCERT_CONTEXT.cpp
@@ -1651,7 +1651,7 @@ for info in (
     if len(info)>4:
         sources = info[4].split()
     extra_compile_args = []
-    ext = WinExt_win32(name, 
+    ext = WinExt_win32(name,
                  libraries=lib_names,
                  extra_compile_args = extra_compile_args,
                  windows_h_version = windows_h_ver,
@@ -1677,7 +1677,7 @@ win32_extensions += [
            delay_load_libraries="powrprof",
            windows_h_version=0x0500,
         ),
-    WinExt_win32("win32gui", 
+    WinExt_win32("win32gui",
            sources = """
                 win32/src/win32dynamicdialog.cpp
                 win32/src/win32gui.i
@@ -2437,7 +2437,7 @@ packages=['win32com',
           'win32comext.directsound.test',
           'win32comext.authorization',
           'win32comext.bits',
-          
+
           'pythonwin.pywin',
           'pythonwin.pywin.debugger',
           'pythonwin.pywin.dialogs',
@@ -2511,10 +2511,10 @@ dist = setup(name="pywin32",
       packages = packages,
       py_modules = py_modules,
 
-      data_files=[('', (os.path.join(gettempdir(),'pywin32.version.txt'),))] + 
+      data_files=[('', (os.path.join(gettempdir(),'pywin32.version.txt'),))] +
         convert_optional_data_files([
                 'PyWin32.chm',
-                ]) + 
+                ]) +
         convert_data_files([
                 'pythonwin/pywin/*.cfg',
                 'pythonwin/pywin/Demos/*.py',
